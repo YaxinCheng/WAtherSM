@@ -145,6 +145,6 @@ impl LocationWeather {
     }
 
     pub fn is_night(&self) -> bool {
-        self.current_time >= self.times.sunrise || self.current_time < self.times.sunset
+        self.current_time < self.times.sunrise || self.current_time > self.times.sunset
     }
 }

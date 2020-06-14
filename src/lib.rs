@@ -2,6 +2,7 @@
 
 mod api;
 mod model;
+mod util;
 mod views;
 use wasm_bindgen::prelude::*;
 use yew::App;

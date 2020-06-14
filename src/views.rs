@@ -1,4 +1,5 @@
 use crate::api::{Location, LocationWeather};
+use crate::util;
 use yew::{html, Html};
 
 pub trait View {
@@ -6,30 +7,33 @@ pub trait View {
 }
 
 pub struct WeatherBoard {
-    title: String,
-    background: WeatherBackground,
+    background: Option<WeatherBackground>,
     today: WeatherToday,
 }
 
 impl WeatherBoard {
     pub fn new(location: Location, weather: LocationWeather) -> Self {
         let title = location.title();
-        let background = WeatherBackground {
-            weather_id: weather.id(),
-            is_night: weather.is_night(),
-        };
+        let background = WeatherBackground::new(
+            weather.id(),
+            weather.is_night(),
+            weather.temperature.feels_like,
+        );
         let sun_rise_time = weather.sun_rise_time();
         let sun_set_time = weather.sun_set_time();
+        let icon = WeatherIcon::new(
+            weather.id(),
+            weather.is_night(),
+            weather.temperature.feels_like,
+        );
         let today = WeatherToday {
+            title,
+            icon,
             weather,
             sun_rise_time,
             sun_set_time,
         };
-        WeatherBoard {
-            title,
-            background,
-            today,
-        }
+        WeatherBoard { background, today }
     }
 }
 
@@ -37,8 +41,13 @@ impl View for WeatherBoard {
     fn display(&self) -> Html {
         html! {
         <>
-            <h1>{ &self.title }</h1>
-            { self.background.display() }
+            {
+            if let Some(background) = self.background.as_ref() {
+                background.display()
+            } else {
+                html!{}
+            }
+            }
             { self.today.display() }
         </>
         }
@@ -46,17 +55,13 @@ impl View for WeatherBoard {
 }
 
 struct WeatherBackground {
-    weather_id: u16,
-    is_night: bool,
+    source_video: String,
 }
 
 impl WeatherBackground {
-    fn source_video(&self) -> &'static str {
-        if self.is_night {
-            "weather_l_sunny.mp4"
-        } else {
-            ""
-        }
+    pub fn new(weather_id: u16, is_night: bool, feels_like: f32) -> Option<Self> {
+        let source_video = util::resources::animation(weather_id, is_night, feels_like)?;
+        Some(WeatherBackground { source_video })
     }
 }
 
@@ -66,7 +71,7 @@ impl View for WeatherBackground {
         <>
             <video autoplay=true loop=true muted=true webkit-playsinline=true
             playsinline=true id="background">
-                <source src={ self.source_video() } type="video/mp4"/>
+                <source src={ &format!("/animations/{}", self.source_video) } type="video/mp4"/>
             </video>
             <script>
                {"
@@ -80,7 +85,28 @@ impl View for WeatherBackground {
     }
 }
 
-struct WeatherToday {
+struct WeatherIcon {
+    image_source: String,
+}
+
+impl WeatherIcon {
+    pub fn new(weather_id: u16, is_night: bool, feels_like: f32) -> Option<Self> {
+        let image_source = util::resources::icon(weather_id, is_night, feels_like)?;
+        Some(WeatherIcon { image_source })
+    }
+}
+
+impl View for WeatherIcon {
+    fn display(&self) -> Html {
+        html! {
+            <img id="icon" src={ &format!("/icons/{}", self.image_source) } />
+        }
+    }
+}
+
+pub struct WeatherToday {
+    title: String,
+    icon: Option<WeatherIcon>,
     weather: LocationWeather,
     sun_rise_time: String,
     sun_set_time: String,
@@ -92,51 +118,69 @@ impl View for WeatherToday {
         let wind = &self.weather.wind;
         html! {
             <div id="today">
-                <h2>{ &self.weather.description() }</h2>
-                <h3>{ &format!("{} °C", temperature.temp) }</h3>
-                <table>
+                <h1>{ &self.title }</h1>
+                <h2 margin-top="0">{ &self.weather.description() }</h2>
+                <div>
+                    <div style="float: left">
+                        <p style="font-size: 40px" class="no_margin_top">{ &format!("{}", temperature.temp.round() as isize) }</p>
+                    </div>
+                    <div style="float: left">
+                        <p style="font-size: 30px" class="no_margin_top">{ "°C" }</p>
+                    </div>
+                </div>
+                <div style="display: inline-block">
+
+                <table id="table">
                     <tr>
-                        <th style="text-align: right">{ "Feels Like" }</th>
-                        <th style="text-align: left">{ &format!("{} °C", temperature.feels_like) }</th>
+                        <th>{ "Feels Like" }</th>
+                        <th>{ &format!("{} °C", temperature.feels_like.round() as isize) }</th>
                     </tr>
                     <tr>
-                        <th style="text-align: right">{ "Min"}</th>
-                        <th style="text-align: left">{ &format!("{} °C", temperature.temp_min) }</th>
+                        <th>{ "Min"}</th>
+                        <th>{ &format!("{} °C", temperature.temp_min.round() as isize) }</th>
                     </tr>
                     <tr>
-                        <th style="text-align: right">{ "Max"}</th>
-                        <th style="text-align: left">{ &format!("{} °C", temperature.temp_max) }</th>
+                        <th>{ "Max"}</th>
+                        <th>{ &format!("{} °C", temperature.temp_max.round() as isize) }</th>
                     </tr>
                     <tr>
-                        <th style="text-align: right">{ "Pressure"}</th>
-                        <th style="text-align: left">{ &format!("{} hPa", temperature.pressure) }</th>
+                        <th>{ "Pressure"}</th>
+                        <th>{ &format!("{} hPa", temperature.pressure) }</th>
                     </tr>
                     <tr>
-                        <th style="text-align: right">{ "Humidity"}</th>
-                        <th style="text-align: left">{ &format!("{} %", temperature.humidity) }</th>
+                        <th>{ "Humidity"}</th>
+                        <th>{ &format!("{} %", temperature.humidity) }</th>
                     </tr>
                     <tr></tr>
                     <tr>
-                        <th style="text-align: right">{ "Visibility"}</th>
-                        <th style="text-align: left">{ &format!("{} m", self.weather.visibility) }</th>
+                        <th>{ "Visibility"}</th>
+                        <th>{ &format!("{} m", self.weather.visibility) }</th>
                     </tr>
                     <tr>
-                        <th style="text-align: right">{ "Wind Speed"}</th>
-                        <th style="text-align: left">{ &format!("{} m/s", wind.speed) }</th>
+                        <th>{ "Wind Speed"}</th>
+                        <th>{ &format!("{} m/s", wind.speed) }</th>
                     </tr>
                     <tr>
-                        <th style="text-align: right">{ "Degree" }</th>
-                        <th style="text-align: left">{ &format!("{} °", wind.degree) }</th>
+                        <th>{ "Wind Degree" }</th>
+                        <th>{ &format!("{} °", wind.degree) }</th>
                     </tr>
                     <tr>
-                        <th style="text-align: right">{ "Sunrise"}</th>
-                        <th style="text-align: left">{ &format!("{}", self.sun_rise_time) }</th>
+                        <th>{ "Sunrise"}</th>
+                        <th>{ &format!("{}", self.sun_rise_time) }</th>
                     </tr>
                     <tr>
-                        <th style="text-align: right">{ "Sunset"}</th>
-                        <th style="text-align: left">{ &format!("{}", self.sun_set_time) }</th>
+                        <th>{ "Sunset"}</th>
+                        <th>{ &format!("{}", self.sun_set_time) }</th>
                     </tr>
                 </table>
+                {
+                    if let Some(icon) = self.icon.as_ref() {
+                        icon.display()
+                    } else {
+                        html! {}
+                    }
+                }
+                </div>
             </div>
         }
     }
