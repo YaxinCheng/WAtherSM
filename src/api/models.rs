@@ -1,31 +1,62 @@
-use chrono::ParseResult;
-use chrono::{DateTime, FixedOffset};
+use chrono::NaiveDateTime;
 use serde::Deserialize;
 
 #[derive(Clone, PartialEq, Deserialize, Debug)]
 pub struct LocationWeather {
-    title: String,
-    time: String,
-    sun_rise: String,
-    sun_set: String,
-    pub consolidated_weather: Vec<Weather>,
-    parent: Parent,
+    #[serde(rename = "weather")]
+    pub descriptions: Vec<Desc>,
+    #[serde(rename = "main")]
+    pub temperature: Temperatures,
+    pub visibility: usize,
+    pub wind: Wind,
+    //pub clouds: Clouds,
+    #[serde(rename = "dt")]
+    pub current_time: i64,
+    #[serde(rename = "sys")]
+    pub times: Times,
+    #[serde(rename = "timezone")]
+    timezone_offset: i64,
 }
 
 #[derive(Clone, PartialEq, Deserialize, Debug)]
-pub struct Weather {
-    pub weather_state_name: String,
-    pub weather_state_abbr: String,
-    pub wind_direction_compass: String,
-    pub min_temp: f32,
-    pub max_temp: f32,
-    pub the_temp: f32,
-    pub wind_speed: f32,
-    pub wind_direction: f32,
-    pub air_pressure: f32,
+pub struct Location {
+    title: String,
+    parent: Parent,
+    latt_long: String,
+}
+
+#[derive(Clone, PartialEq, Deserialize, Debug)]
+pub struct Temperatures {
+    pub temp: f32,
+    pub feels_like: f32,
+    pub temp_min: f32,
+    pub temp_max: f32,
+    pub pressure: isize,
     pub humidity: isize,
-    pub visibility: f32,
-    pub applicable_date: String,
+}
+
+#[derive(Clone, PartialEq, Deserialize, Debug)]
+pub struct Wind {
+    pub speed: f32,
+    #[serde(rename = "deg")]
+    pub degree: f32,
+}
+
+#[derive(Clone, PartialEq, Deserialize, Debug)]
+pub struct Clouds {
+    pub all: u8,
+}
+
+#[derive(Clone, PartialEq, Deserialize, Debug)]
+pub struct Times {
+    sunrise: i64,
+    sunset: i64,
+}
+
+#[derive(Clone, PartialEq, Deserialize, Debug)]
+pub struct Desc {
+    id: u16,
+    description: String,
 }
 
 #[derive(Clone, PartialEq, Deserialize, Debug)]
@@ -33,36 +64,87 @@ pub struct Parent {
     title: String,
 }
 
-impl LocationWeather {
+impl Location {
     pub fn title(&self) -> String {
         format!("{}, {}", self.title, self.parent.title)
     }
 
-    fn sun_rise(&self) -> ParseResult<DateTime<FixedOffset>> {
-        DateTime::parse_from_rfc3339(&self.sun_rise)
+    pub fn lat_lon(&self) -> (f32, f32) {
+        let parsed = self
+            .latt_long
+            .splitn(2, ",")
+            .map(str::parse::<f32>)
+            .filter_map(Result::ok)
+            .collect::<Vec<_>>();
+        if parsed.len() != 2 {
+            panic!(
+                "The lat and lon is not successfully parsed: {}",
+                self.latt_long
+            );
+        }
+        (parsed[0], parsed[1])
     }
 
-    fn sun_set(&self) -> ParseResult<DateTime<FixedOffset>> {
-        DateTime::parse_from_rfc3339(&self.sun_set)
+    pub fn test_default() -> Self {
+        Location {
+            title: "Toronto".to_string(),
+            parent: Parent {
+                title: "Canada".to_string(),
+            },
+            latt_long: "43.648560,-79.385368".to_string(),
+        }
+    }
+}
+
+impl LocationWeather {
+    pub fn id(&self) -> u16 {
+        self.descriptions
+            .first()
+            .map(|desc| desc.id)
+            .unwrap_or_default()
     }
 
-    pub fn sun_rise_time(&self) -> ParseResult<String> {
-        self.sun_rise().map(|datetime| datetime.time().to_string())
+    pub fn description(&self) -> String {
+        let mut description = String::new();
+        for (part_index, part) in self
+            .descriptions
+            .first()
+            .map(|desc| desc.description.as_str())
+            .unwrap_or_default()
+            .split_ascii_whitespace()
+            .enumerate()
+        {
+            if part_index != 0 {
+                description.push(' ');
+            }
+            for (index, char) in part.chars().enumerate() {
+                if index == 0 {
+                    description.push(char.to_ascii_uppercase());
+                } else {
+                    description.push(char)
+                }
+            }
+        }
+        description
     }
 
-    pub fn sun_set_time(&self) -> ParseResult<String> {
-        self.sun_set().map(|datetime| datetime.time().to_string())
+    fn sun_rise(&self) -> NaiveDateTime {
+        NaiveDateTime::from_timestamp(self.times.sunrise + self.timezone_offset, 0)
     }
 
-    pub fn current_time(&self) -> ParseResult<DateTime<FixedOffset>> {
-        DateTime::parse_from_rfc3339(&self.time)
+    fn sun_set(&self) -> NaiveDateTime {
+        NaiveDateTime::from_timestamp(self.times.sunset + self.timezone_offset, 0)
+    }
+
+    pub fn sun_rise_time(&self) -> String {
+        self.sun_rise().time().format("%H:%M").to_string()
+    }
+
+    pub fn sun_set_time(&self) -> String {
+        self.sun_set().time().format("%H:%M").to_string()
     }
 
     pub fn is_night(&self) -> bool {
-        let (time, sunrise, sunset) = match (self.current_time(), self.sun_rise(), self.sun_set()) {
-            (Ok(time), Ok(sunrise), Ok(sunset)) => (time, sunrise, sunset),
-            _ => return false,
-        };
-        time.gt(&sunset) || time.lt(&sunrise)
+        self.current_time >= self.times.sunrise || self.current_time < self.times.sunset
     }
 }

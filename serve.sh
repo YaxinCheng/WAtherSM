@@ -1,3 +1,3 @@
 #!/bin/zsh
 
-python -m http.server 7777 --directory ./static
+http-server static/ -p 7777

@@ -1,4 +1,4 @@
-use crate::api::{LocationWeather, WeatherAPI};
+use crate::api::{Location, LocationWeather, WeatherAPI};
 use crate::views::{View, WeatherBoard};
 use anyhow::Error;
 use yew::format::Json;
@@ -14,9 +14,10 @@ pub struct Model {
 }
 
 pub enum Msg {
-    Add,
-    Fetched(LocationWeather),
-    Failed,
+    LoadLocation,
+    LoadWeather(Location),
+    Fetched(Location, LocationWeather),
+    Failed(&'static str),
 }
 
 impl Component for Model {
@@ -24,30 +25,35 @@ impl Component for Model {
     type Properties = ();
 
     fn create(_: Self::Properties, link: ComponentLink<Self>) -> Self {
-        Model {
+        let mut model = Model {
             link,
             console: ConsoleService::new(),
             api: WeatherAPI::new(),
             view: None,
-        }
+        };
+        model.update(Msg::LoadLocation);
+        model
     }
 
     fn update(&mut self, msg: Self::Message) -> bool {
         match msg {
-            Msg::Add => {
-                self.console.log("Add");
+            Msg::LoadLocation => {
+                // load location
+                self.update(Msg::LoadWeather(Location::test_default()));
+            }
+            Msg::LoadWeather(location) => {
                 let res = self.api.fetch(
-                    44418,
-                    self.link.callback(
-                        |response: Response<Json<Result<LocationWeather, Error>>>| {
+                    &location.clone(),
+                    self.link.callback_once(
+                        move |response: Response<Json<Result<LocationWeather, Error>>>| {
                             if let (meta, Json(Ok(body))) = response.into_parts() {
                                 if meta.status.is_success() {
-                                    Msg::Fetched(body)
+                                    Msg::Fetched(location, body)
                                 } else {
-                                    Msg::Failed
+                                    Msg::Failed("Not success")
                                 }
                             } else {
-                                Msg::Failed
+                                Msg::Failed("Json parse failed")
                             }
                         },
                     ),
@@ -58,10 +64,10 @@ impl Component for Model {
                 }
                 self.console.log("Completed");
             }
-            Msg::Fetched(response) => {
-                self.view.replace(WeatherBoard::new(response));
+            Msg::Fetched(location, response) => {
+                self.view.replace(WeatherBoard::new(location, response));
             }
-            Msg::Failed => self.console.log("Failed"),
+            Msg::Failed(info) => self.console.error(info),
         };
         true
     }
@@ -72,10 +78,6 @@ impl Component for Model {
 
     fn view(&self) -> Html {
         html! {
-        <>
-            <div>
-                <button onclick=self.link.callback(|_| Msg::Add)>{ "+1" }</button>
-            </div>
             <div>
             {
                 if let Some(view) = &self.view {
@@ -85,7 +87,6 @@ impl Component for Model {
                 }
             }
             </div>
-        </>
         }
     }
 }
