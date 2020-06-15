@@ -1,0 +1,15 @@
+{
+  "name": "weather",
+  "collaborators": [
+    "Yaxin Cheng <yaxin.cheng@icloud.com>"
+  ],
+  "version": "0.1.0",
+  "files": [
+    "weather_wasm_bg.wasm",
+    "weather_wasm.js",
+    "weather_wasm.d.ts"
+  ],
+  "module": "weather_wasm.js",
+  "types": "weather_wasm.d.ts",
+  "sideEffects": false
+}
