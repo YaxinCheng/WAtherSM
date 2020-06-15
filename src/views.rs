@@ -1,4 +1,4 @@
-use crate::api::{Location, LocationWeather};
+use crate::api::LocationWeather;
 use crate::util;
 use yew::{html, Html};
 
@@ -12,8 +12,8 @@ pub struct WeatherBoard {
 }
 
 impl WeatherBoard {
-    pub fn new(location: Location, weather: LocationWeather) -> Self {
-        let title = location.title();
+    pub fn new(title: String, weather: LocationWeather) -> Self {
+        let title = title;
         let background = WeatherBackground::new(
             weather.id(),
             weather.is_night(),
@@ -64,22 +64,26 @@ impl WeatherBackground {
         Some(WeatherBackground { source_video })
     }
 }
+/*
+
+           <script>
+             {"
+              const media = document.getElementById('background');
+              media.muted = true;
+              console.log('muted');
+              media.play();
+             "}
+           </script>
+*/
 
 impl View for WeatherBackground {
     fn display(&self) -> Html {
         html! {
         <>
-            <video autoplay=true loop=true muted=true webkit-playsinline=true
+            <video preload="auto" autoplay=true loop=true muted=true webkit-playsinline=true
             playsinline=true id="background">
                 <source src={ &format!("/animations/{}", self.source_video) } type="video/mp4"/>
             </video>
-            <script>
-               {"
-                const media = document.getElementById('background');
-                media.muted = true;
-                media.play();
-               "}
-            </script>
         </>
         }
     }
@@ -157,10 +161,18 @@ impl View for WeatherToday {
                         <td>{ &format!("{} %", temperature.humidity) }</td>
                     </tr>
                     <tr></tr>
-                    <tr>
-                        <th>{ "Visibility"}</th>
-                        <td>{ &format!("{} m", self.weather.visibility) }</td>
-                    </tr>
+                    {
+                        if let Some(visibility) = self.weather.visibility {
+                            html!{
+                            <tr>
+                                <th>{ "Visibility"}</th>
+                                <td>{ &format!("{} m", visibility) }</td>
+                            </tr>
+                            }
+                        } else {
+                            html!{}
+                        }
+                    }
                     <tr>
                         <th>{ "Wind Speed"}</th>
                         <td>{ &format!("{} m/s", wind.speed) }</td>

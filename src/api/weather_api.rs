@@ -2,7 +2,6 @@ use super::models::LocationWeather;
 use super::proxy::proxy;
 use super::source::Source;
 use super::task_manage::TaskManage;
-use crate::api::Location;
 use anyhow::Error;
 use yew::format::{Json, Nothing};
 use yew::services::fetch::{FetchTask, Request, Response};
@@ -32,13 +31,12 @@ impl WeatherAPI {
 
     pub fn fetch(
         &mut self,
-        location: &Location,
+        location: usize,
         callback: Callback<Response<Json<Result<LocationWeather, Error>>>>,
     ) -> Result<(), Error> {
-        let (lat, lon) = location.lat_lon();
         let fetch_url = match self.source.support_cors() {
-            true => self.source.weather_url_by_lat_lon(lat, lon),
-            false => proxy(self.source.weather_url_by_lat_lon(lat, lon)),
+            true => self.source.weather_url_by_id(location),
+            false => proxy(self.source.weather_url_by_id(location)),
         };
         let request = Request::get(fetch_url).body(Nothing)?;
         let task = self.service.fetch(request, callback)?;

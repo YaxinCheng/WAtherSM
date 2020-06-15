@@ -7,7 +7,7 @@ pub struct LocationWeather {
     pub descriptions: Vec<Desc>,
     #[serde(rename = "main")]
     pub temperature: Temperatures,
-    pub visibility: usize,
+    pub visibility: Option<usize>,
     pub wind: Wind,
     //pub clouds: Clouds,
     #[serde(rename = "dt")]
@@ -16,13 +16,6 @@ pub struct LocationWeather {
     pub times: Times,
     #[serde(rename = "timezone")]
     timezone_offset: i64,
-}
-
-#[derive(Clone, PartialEq, Deserialize, Debug)]
-pub struct Location {
-    title: String,
-    parent: Parent,
-    latt_long: String,
 }
 
 #[derive(Clone, PartialEq, Deserialize, Debug)]
@@ -57,43 +50,6 @@ pub struct Times {
 pub struct Desc {
     id: u16,
     description: String,
-}
-
-#[derive(Clone, PartialEq, Deserialize, Debug)]
-pub struct Parent {
-    title: String,
-}
-
-impl Location {
-    pub fn title(&self) -> String {
-        format!("{}, {}", self.title, self.parent.title)
-    }
-
-    pub fn lat_lon(&self) -> (f32, f32) {
-        let parsed = self
-            .latt_long
-            .splitn(2, ",")
-            .map(str::parse::<f32>)
-            .filter_map(Result::ok)
-            .collect::<Vec<_>>();
-        if parsed.len() != 2 {
-            panic!(
-                "The lat and lon is not successfully parsed: {}",
-                self.latt_long
-            );
-        }
-        (parsed[0], parsed[1])
-    }
-
-    pub fn test_default() -> Self {
-        Location {
-            title: "Toronto".to_string(),
-            parent: Parent {
-                title: "Canada".to_string(),
-            },
-            latt_long: "43.648560,-79.385368".to_string(),
-        }
-    }
 }
 
 impl LocationWeather {

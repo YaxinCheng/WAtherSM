@@ -1,9 +1,11 @@
 pub enum Source {
+    #[allow(dead_code)]
     MetaWeather,
     OpenWeather,
 }
 
 impl Source {
+    #[allow(dead_code)]
     pub fn weather_url(&self, woeid: u64) -> String {
         use Source::*;
         match self {
@@ -12,12 +14,15 @@ impl Source {
         }
     }
 
-    pub fn weather_url_by_lat_lon(&self, lat: f32, lon: f32) -> String {
+    pub fn weather_url_by_id(&self, id: usize) -> String {
         use Source::*;
         match self {
             MetaWeather => unimplemented!("Unable to use lat lon"),
-            OpenWeather => format!("https://api.openweathermap.org/data/2.5/weather?lat={}&lon={}&appid={}&units=metric", 
-                                   lat, lon, include_str!("../../.apikey")),
+            OpenWeather => format!(
+                "https://api.openweathermap.org/data/2.5/weather?id={}&appid={}&units=metric",
+                id,
+                include_str!("../../.apikey")
+            ),
         }
     }
 

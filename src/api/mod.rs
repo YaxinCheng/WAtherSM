@@ -1,3 +1,4 @@
+pub mod locations;
 mod models;
 mod proxy;
 mod source;
