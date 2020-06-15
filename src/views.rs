@@ -119,67 +119,66 @@ impl View for WeatherToday {
         html! {
             <div id="today">
                 <h1>{ &self.title }</h1>
-                <h2 margin-top="0">{ &self.weather.description() }</h2>
                 <div>
-                    <div style="float: left">
-                        <p style="font-size: 40px" class="no_margin_top">{ &format!("{}", temperature.temp.round() as isize) }</p>
-                    </div>
-                    <div style="float: left">
-                        <p style="font-size: 30px" class="no_margin_top">{ "°C" }</p>
+                    {
+                        if let Some(icon) = self.icon.as_ref() {
+                            icon.display()
+                        } else {
+                            html! {}
+                        }
+                    }
+                    <h2 margin-top="0">{ &self.weather.description() }</h2>
+                    <div id="temperatures">
+                        <div>
+                            <div style="font-size: 40px" class="no_margin_top">{ &format!("{}", temperature.temp.round() as isize) }</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 30px" class="no_margin_top">{ "°C" }</div>
+                        </div>
+                        <div id="max-min-temp">
+                            <div>{ &format!("{} °C", temperature.temp_max.round() as isize) }</div>
+                            <div>{ &format!("{} °C", temperature.temp_min.round() as isize) }</div>
+                        </div>
                     </div>
                 </div>
-                <div style="display: inline-block">
 
+                <div>
                 <table id="table">
                     <tr>
                         <th>{ "Feels Like" }</th>
-                        <th>{ &format!("{} °C", temperature.feels_like.round() as isize) }</th>
-                    </tr>
-                    <tr>
-                        <th>{ "Min"}</th>
-                        <th>{ &format!("{} °C", temperature.temp_min.round() as isize) }</th>
-                    </tr>
-                    <tr>
-                        <th>{ "Max"}</th>
-                        <th>{ &format!("{} °C", temperature.temp_max.round() as isize) }</th>
+                        <td>{ &format!("{} °C", temperature.feels_like.round() as isize) }</td>
                     </tr>
                     <tr>
                         <th>{ "Pressure"}</th>
-                        <th>{ &format!("{} hPa", temperature.pressure) }</th>
+                        <td>{ &format!("{} hPa", temperature.pressure) }</td>
                     </tr>
                     <tr>
                         <th>{ "Humidity"}</th>
-                        <th>{ &format!("{} %", temperature.humidity) }</th>
+                        <td>{ &format!("{} %", temperature.humidity) }</td>
                     </tr>
                     <tr></tr>
                     <tr>
                         <th>{ "Visibility"}</th>
-                        <th>{ &format!("{} m", self.weather.visibility) }</th>
+                        <td>{ &format!("{} m", self.weather.visibility) }</td>
                     </tr>
                     <tr>
                         <th>{ "Wind Speed"}</th>
-                        <th>{ &format!("{} m/s", wind.speed) }</th>
+                        <td>{ &format!("{} m/s", wind.speed) }</td>
                     </tr>
                     <tr>
                         <th>{ "Wind Degree" }</th>
-                        <th>{ &format!("{} °", wind.degree) }</th>
+                        <td>{ &format!("{} °", wind.degree) }</td>
                     </tr>
                     <tr>
                         <th>{ "Sunrise"}</th>
-                        <th>{ &format!("{}", self.sun_rise_time) }</th>
+                        <td>{ &format!("{}", self.sun_rise_time) }</td>
                     </tr>
                     <tr>
                         <th>{ "Sunset"}</th>
-                        <th>{ &format!("{}", self.sun_set_time) }</th>
+                        <td>{ &format!("{}", self.sun_set_time) }</td>
                     </tr>
                 </table>
-                {
-                    if let Some(icon) = self.icon.as_ref() {
-                        icon.display()
-                    } else {
-                        html! {}
-                    }
-                }
+
                 </div>
             </div>
         }

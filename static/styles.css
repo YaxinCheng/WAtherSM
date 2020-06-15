@@ -1,3 +1,7 @@
+body {
+    font-family: Helvetica;
+    font-weight: normal;
+}
 #background {
     position: fixed;
     right: 0;
@@ -12,9 +16,10 @@
     top: 20px;
     left: 20px;
     width: 25%;
+    max-width: 300px;
     padding: 20px;
-    -webkit-backdrop-filter: blur(10px);
-    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(5px);
+    backdrop-filter: blur(5px);
 }
 .no_margin_top {
     margin-top: 0px;
@@ -35,12 +40,23 @@
     margin-left: 0;
     margin-right: 0;
     width: 50%;
-    float: left;
+    float: right;
 }
 #table {
     margin-right: 0;
     float: left;
 }
+#temperatures > div {
+    display: inline-block;
+}
+#max-min-temp {
+    padding-left: 20px;
+}
+
 th {
     text-align: left;
+    font-weight: lighter;
+}
+td {
+    padding-left: 40px;
 }
