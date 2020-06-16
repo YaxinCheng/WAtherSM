@@ -12,31 +12,57 @@ body {
 }
 #today {
     border-radius: 20px;
+    width: 100%;
+    -webkit-backdrop-filter: blur(5px);
+    backdrop-filter: blur(5px);
+    min-height: 400px;
+    max-height: 100%;
+    max-width: 300px;
+    padding: 20px;
+    height: auto;
+}
+#weatherPanel {
     position: fixed;
     top: 80px;
     left: 20px;
-    width: 25%;
-    max-width: 300px;
-    padding: 20px;
-    -webkit-backdrop-filter: blur(5px);
+    bottom: 20px;
+    min-width: 400px;
+    max-width: 90%;
+    overflow-y: scroll;
+}
+#weatherPanel > * {
+    margin-bottom: 20px;
+}
+div#buttonLine > button {
+    border-radius: 20px;
+    float: left;
+    width: 75px;
+    height: 75px;
     backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    border: none;
+    margin-right: 20px;
+    font-size: 25px;
 }
 .no_margin_top {
     margin-top: 0px;
 }
 @media (prefers-color-scheme: dark) {
-    #today, #suggestions, #searchBar {
+    #today, #suggestions, #searchBar, div#buttonLine > button {
         background: rgba(0, 0, 0, 0.5);
         color: #f1f1f1;
     }
 }
 @media (prefers-color-scheme: light) {
-    #today, #suggestions, #searchBar {
+    #today, #suggestions, #searchBar, div#buttonLine > button {
         background: rgba(255, 255, 255, 0.5);
         color: #212121;
     }
+    input::placeholder {
+        color: #222222;
+    }
 }
-input:focus {
+*:focus {
     outline: none;
 }
 #icon {
@@ -44,10 +70,6 @@ input:focus {
     margin-right: 0;
     width: 50%;
     float: right;
-}
-#table {
-    margin-right: 0;
-    float: left;
 }
 #temperatures > div {
     display: inline-block;
@@ -72,6 +94,18 @@ input:focus {
     padding: 10px;
     -webkit-backdrop-filter: blur(5px);
     backdrop-filter: blur(5px);
+    max-height: 500px;
+}
+div.shaded, button#sync.shaded {
+    display: none;
+    transition: all .2s ease-in-out;
+}
+button#shade.shaded {
+    transform: rotate(180deg);
+    transition: all .2s ease-in-out;
+}
+button#shade {
+    transition: all .2s ease-in-out;
 }
 #suggestions:empty {
     display: none;
@@ -89,7 +123,8 @@ input:focus {
     left: 20px;
     top: 20px;
     max-height: 60%;
-    min-width: 40%;
+    min-width: 600px;
+    max-width: 90%;
 }
 
 th {

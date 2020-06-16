@@ -7,17 +7,18 @@ pub trait View {
 }
 
 pub struct WeatherBoard {
-    background: Option<WeatherBackground>,
-    today: WeatherToday,
+    pub background: Option<WeatherBackground>,
+    pub today: WeatherToday,
 }
 
 impl WeatherBoard {
-    pub fn new(title: String, weather: LocationWeather) -> Self {
+    pub fn new(title: String, weather: LocationWeather, portrait: bool) -> Self {
         let title = title;
         let background = WeatherBackground::new(
             weather.id(),
             weather.is_night(),
             weather.temperature.feels_like,
+            portrait,
         );
         let sun_rise_time = weather.sun_rise_time();
         let sun_set_time = weather.sun_set_time();
@@ -37,44 +38,16 @@ impl WeatherBoard {
     }
 }
 
-impl View for WeatherBoard {
-    fn display(&self) -> Html {
-        html! {
-        <>
-            {
-            if let Some(background) = self.background.as_ref() {
-                background.display()
-            } else {
-                html!{}
-            }
-            }
-            { self.today.display() }
-        </>
-        }
-    }
-}
-
-struct WeatherBackground {
+pub struct WeatherBackground {
     source_video: String,
 }
 
 impl WeatherBackground {
-    pub fn new(weather_id: u16, is_night: bool, feels_like: f32) -> Option<Self> {
-        let source_video = util::resources::animation(weather_id, is_night, feels_like)?;
+    pub fn new(weather_id: u16, is_night: bool, feels_like: f32, portrait: bool) -> Option<Self> {
+        let source_video = util::resources::animation(weather_id, is_night, feels_like, portrait)?;
         Some(WeatherBackground { source_video })
     }
 }
-/*
-
-           <script>
-             {"
-              const media = document.getElementById('background');
-              media.muted = true;
-              console.log('muted');
-              media.play();
-             "}
-           </script>
-*/
 
 impl View for WeatherBackground {
     fn display(&self) -> Html {
@@ -124,14 +97,12 @@ impl View for WeatherToday {
             <div id="today">
                 <h1>{ &self.title }</h1>
                 <div>
-                    {
-                        if let Some(icon) = self.icon.as_ref() {
-                            icon.display()
-                        } else {
-                            html! {}
-                        }
-                    }
                     <h2 margin-top="0">{ &self.weather.description() }</h2>
+                    {
+                        self.icon.as_ref()
+                            .map(|icon| icon.display())
+                            .unwrap_or(html!{})
+                    }
                     <div id="temperatures">
                         <div>
                             <div style="font-size: 40px" class="no_margin_top">{ &format!("{}", temperature.temp.round() as isize) }</div>
@@ -146,7 +117,6 @@ impl View for WeatherToday {
                     </div>
                 </div>
 
-                <div>
                 <table id="table">
                     <tr>
                         <th>{ "Feels Like" }</th>
@@ -190,8 +160,6 @@ impl View for WeatherToday {
                         <td>{ &format!("{}", self.sun_set_time) }</td>
                     </tr>
                 </table>
-
-                </div>
             </div>
         }
     }

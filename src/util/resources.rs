@@ -1,8 +1,11 @@
 // The numeric code is provided by OpenWeather to indicate the weather condition
 // The full table and explaination can be found here: https://openweathermap.org/weather-conditions
 
-pub fn animation(id: u16, is_night: bool, feels_like: f32) -> Option<String> {
-    let mut video_name = String::from("weather_l_");
+pub fn animation(id: u16, is_night: bool, feels_like: f32, portrait: bool) -> Option<String> {
+    let mut video_name = String::from("weather_");
+    if !portrait {
+        video_name.push_str("l_");
+    }
     let (weather, append_time_suffix) = match id {
         200..=232 | 762..=781 => ("thunderstorm", true),
         300..=321 | 500..=531 => ("rain", true),
