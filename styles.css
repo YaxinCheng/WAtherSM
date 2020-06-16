@@ -1,3 +1,7 @@
+body {
+    font-family: Helvetica;
+    font-weight: normal;
+}
 #background {
     position: fixed;
     right: 0;
@@ -9,38 +13,89 @@
 #today {
     border-radius: 20px;
     position: fixed;
-    top: 20px;
+    top: 80px;
     left: 20px;
     width: 25%;
+    max-width: 300px;
     padding: 20px;
-    -webkit-backdrop-filter: blur(10px);
-    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(5px);
+    backdrop-filter: blur(5px);
 }
 .no_margin_top {
     margin-top: 0px;
 }
 @media (prefers-color-scheme: dark) {
-    #today {
+    #today, #suggestions, #searchBar {
         background: rgba(0, 0, 0, 0.5);
         color: #f1f1f1;
     }
 }
 @media (prefers-color-scheme: light) {
-    #today {
-        background: rgba(255, 255, 255, 0.5) !important;
+    #today, #suggestions, #searchBar {
+        background: rgba(255, 255, 255, 0.5);
         color: #212121;
     }
+}
+input:focus {
+    outline: none;
 }
 #icon {
     margin-left: 0;
     margin-right: 0;
     width: 50%;
-    float: left;
+    float: right;
 }
 #table {
     margin-right: 0;
     float: left;
 }
+#temperatures > div {
+    display: inline-block;
+}
+#max-min-temp {
+    padding-left: 20px;
+}
+#searchBar {
+    width: 100%;
+    padding: 10px;
+    font-size: 20px;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    border-radius: 20px;
+    border: none;
+}
+#suggestions {
+    overflow-x: hidden;
+    overflow-y: scroll;
+    width: 100%;
+    border-radius: 20px;
+    padding: 10px;
+    -webkit-backdrop-filter: blur(5px);
+    backdrop-filter: blur(5px);
+}
+#suggestions:empty {
+    display: none;
+}
+#suggestions > li {
+    font-size: 18px;
+    margin: 10px 0;
+}
+#suggestions > li:hover {
+    transition: all .1s ease-in-out;
+    font-size: 25px;
+}
+#searchBarArea {
+    position: fixed;
+    left: 20px;
+    top: 20px;
+    max-height: 60%;
+    min-width: 40%;
+}
+
 th {
     text-align: left;
+    font-weight: lighter;
+}
+td {
+    padding-left: 40px;
 }

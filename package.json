@@ -5,11 +5,11 @@
   ],
   "version": "0.1.0",
   "files": [
-    "wasm_bg.wasm",
-    "wasm.js",
-    "wasm.d.ts"
+    "weather_wasm_bg.wasm",
+    "weather_wasm.js",
+    "weather_wasm.d.ts"
   ],
-  "module": "wasm.js",
-  "types": "wasm.d.ts",
+  "module": "weather_wasm.js",
+  "types": "weather_wasm.d.ts",
   "sideEffects": false
 }
