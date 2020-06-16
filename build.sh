@@ -1,2 +1,2 @@
 #!/bin/zsh
-wasm-pack build --target web --out-name wasm --out-dir ./static
+wasm-pack build --target web --out-name weather_wasm --out-dir ./static

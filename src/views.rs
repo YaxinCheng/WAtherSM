@@ -82,7 +82,7 @@ impl View for WeatherBackground {
         <>
             <video preload="auto" autoplay=true loop=true muted=true webkit-playsinline=true
             playsinline=true id="background">
-                <source src={ &format!("/animations/{}", self.source_video) } type="video/mp4"/>
+                <source src={ &format!("animations/{}", self.source_video) } type="video/mp4"/>
             </video>
         </>
         }
@@ -103,7 +103,7 @@ impl WeatherIcon {
 impl View for WeatherIcon {
     fn display(&self) -> Html {
         html! {
-            <img id="icon" src={ &format!("/icons/{}", self.image_source) } />
+            <img id="icon" src={ &format!("icons/{}", self.image_source) } />
         }
     }
 }
