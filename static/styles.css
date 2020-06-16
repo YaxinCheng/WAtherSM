@@ -13,7 +13,7 @@ body {
 #today {
     border-radius: 20px;
     position: fixed;
-    top: 20px;
+    top: 80px;
     left: 20px;
     width: 25%;
     max-width: 300px;
@@ -25,24 +25,19 @@ body {
     margin-top: 0px;
 }
 @media (prefers-color-scheme: dark) {
-    #today {
-        background: rgba(0, 0, 0, 0.5);
-        color: #f1f1f1;
-    }
-    #suggestions {
+    #today, #suggestions, #searchBar {
         background: rgba(0, 0, 0, 0.5);
         color: #f1f1f1;
     }
 }
 @media (prefers-color-scheme: light) {
-    #today {
+    #today, #suggestions, #searchBar {
         background: rgba(255, 255, 255, 0.5);
         color: #212121;
     }
-    #suggestions {
-        background: rgba(255, 255, 255, 0.5);
-        color: #212121;
-    }
+}
+input:focus {
+    outline: none;
 }
 #icon {
     margin-left: 0;
@@ -61,15 +56,40 @@ body {
     padding-left: 20px;
 }
 #searchBar {
-    position: fixed;
+    width: 100%;
+    padding: 10px;
+    font-size: 20px;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    border-radius: 20px;
+    border: none;
 }
 #suggestions {
-    position: fixed;
     overflow-x: hidden;
     overflow-y: scroll;
-    max-height: 50%;
+    width: 100%;
+    border-radius: 20px;
+    padding: 10px;
     -webkit-backdrop-filter: blur(5px);
     backdrop-filter: blur(5px);
+}
+#suggestions:empty {
+    display: none;
+}
+#suggestions > li {
+    font-size: 18px;
+    margin: 10px 0;
+}
+#suggestions > li:hover {
+    transition: all .1s ease-in-out;
+    font-size: 25px;
+}
+#searchBarArea {
+    position: fixed;
+    left: 20px;
+    top: 20px;
+    max-height: 60%;
+    min-width: 40%;
 }
 
 th {

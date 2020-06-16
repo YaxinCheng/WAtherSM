@@ -148,7 +148,6 @@ impl Component for Model {
         });
         html! {
         <>
-            <div>
             {
                 if let Some(view) = &self.view {
                     view.display()
@@ -156,19 +155,20 @@ impl Component for Model {
                     html!{}
                 }
             }
-            <input id="searchBar"
-                placeholder="Find your city here"
-                onclick=self.link.callback(|_| Msg::LoadSearchBar)
-                oninput=self.link.callback(|e: InputData| Msg::Search(e.value))
-                onkeypress=self.link.callback(move |e: KeyboardEvent| {
-                    Msg::Ignored
-                })
-            />
-            <ul id="suggestions">
-            { for list }
-            </ul>
+            <div id="searchBarArea">
+                <input id="searchBar"
+                    placeholder="Find your city here"
+                    onclick=self.link.callback(|_| Msg::LoadSearchBar)
+                    oninput=self.link.callback(|e: InputData| Msg::Search(e.value))
+                    onkeypress=self.link.callback(move |e: KeyboardEvent| {
+                        Msg::Ignored
+                    })
+                />
+                <ul id="suggestions">
+                { for list }
+                </ul>
             </div>
-            </>
+        </>
         }
     }
 }
