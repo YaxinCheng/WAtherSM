@@ -1,9 +1,15 @@
-use super::models;
 use another_radix_trie::RadixTrie;
+use anyhow::Error;
+use wasm_bindgen::__rt::std::collections::BTreeMap;
+use yew::format::Nothing;
+use yew::services::fetch::{FetchTask, Request, Response};
+use yew::services::FetchService;
+use yew::Callback;
 
 pub struct Storage {
     trie: RadixTrie<(String, usize)>,
-    populated: bool,
+    pub populated: bool,
+    loading_task: Option<FetchTask>,
 }
 
 impl Storage {
@@ -11,20 +17,30 @@ impl Storage {
         Storage {
             trie: RadixTrie::new(),
             populated: false,
+            loading_task: None,
         }
     }
 
-    pub fn populates(&mut self) {
+    pub fn load(&mut self, callback: Callback<Response<Result<Vec<u8>, Error>>>) {
+        if self.populated {
+            return;
+        }
+        let request = Request::get("city.list.json")
+            .body(Nothing)
+            .expect("Failed to create request");
+        self.loading_task = FetchService::new().fetch_binary(request, callback).ok();
+    }
+
+    pub fn populates(&mut self, data: Vec<u8>) {
         if self.populated {
             return;
         }
         self.populated = true;
-        let cities = models::bunch_load().expect("Failed to load cities");
-        cities.into_iter().for_each(|city| {
-            let full_name = city.full_name();
-            let id = city.id;
-            self.trie.insert(&full_name.to_lowercase(), (full_name, id));
-        });
+        let cities = serde_json::from_slice::<BTreeMap<String, usize>>(&data)
+            .expect("Failed to deserialize");
+        cities
+            .into_iter()
+            .for_each(|(name, id)| self.trie.insert(&name.to_lowercase(), (name, id)));
     }
 
     pub fn find(&self, name: &str) -> Vec<(String, usize)> {

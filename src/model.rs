@@ -29,6 +29,7 @@ pub enum Msg {
     Fetched(String, LocationWeather),
     Search(String),
     Failed(String),
+    LocationDataLoaded(Vec<u8>),
     PlayVideo,
     Shade,
     Ignored,
@@ -60,7 +61,8 @@ impl Component for Model {
             Msg::LoadWeather(title, id) => return self.load_weather(title, id),
             Msg::Fetched(location, response) => return self.display_weather(location, response),
             Msg::Search(city) => return self.search_city(&city),
-            Msg::LoadSearchBar => self.location_api.populates(),
+            Msg::LoadSearchBar => self.load_search_bar(),
+            Msg::LocationDataLoaded(bytes) => self.populate_location_storage(bytes),
             Msg::Failed(info) => self.console.error(&info),
             Msg::PlayVideo => self.play_video(),
             Msg::Shade => return self.shade_views(),
@@ -84,22 +86,9 @@ impl Component for Model {
         <>
             {
                 self.view.as_ref()
-                    .and_then(|board| board.background.as_ref())
-                    .map(|background| background.display())
+                    .map(|board| board.display())
                     .unwrap_or(html!{})
             }
-            <div id="weatherPanel">
-            {
-                self.view.as_ref()
-                    .map(|board| &board.today)
-                    .map(|today| today.display())
-                    .unwrap_or(html!{})
-            }
-            <div id="buttonLine">
-            <button id="shade" onclick=self.link.callback(|_| Msg::Shade)>{ "🔼️" }</button>
-            <button id="sync" onclick=self.link.callback(|_| Msg::LoadLocation)>{ "🔄" }</button>
-            </div>
-            </div>
             <div id="searchBarArea">
                 <input id="searchBar"
                     placeholder="Find your city here"
@@ -121,14 +110,14 @@ impl Component for Model {
 impl Model {
     fn shade_views(&mut self) -> bool {
         let class = "shaded";
-        let targeted_ids = ["shade", "today", "sync"];
+        let targeted_ids = ["shade", "today"];
         for id in &targeted_ids {
             if let Some(element) = utils::document().get_element_by_id(id) {
                 let class_list = element.class_list();
                 if class_list.contains(class) {
                     let _ = class_list.remove_1(class);
                 } else {
-                    element.set_class_name(class);
+                    let _ = class_list.add_1(class);
                 }
             }
         }
@@ -163,8 +152,13 @@ impl Model {
             }
             _ => false,
         };
-        self.view
-            .replace(WeatherBoard::new(title, weather, portrait));
+        self.view.replace(WeatherBoard::new(
+            title,
+            weather,
+            portrait,
+            self.link.callback(|_| Msg::LoadLocation),
+            self.link.callback(|_| Msg::Shade),
+        ));
         self.link.send_message(Msg::PlayVideo);
         return true;
     }
@@ -218,5 +212,30 @@ impl Model {
             }
         }
         self.link.send_message(Msg::LoadWeather(msg_title, msg_id));
+    }
+
+    fn load_search_bar(&mut self) {
+        if self.location_api.populated {
+            return;
+        }
+        self.location_api.load(self.link.callback_once(
+            |response: Response<Result<Vec<u8>, Error>>| {
+                let (meta, data) = response.into_parts();
+                if meta.status.is_success() {
+                    match data {
+                        Ok(bytes) => Msg::LocationDataLoaded(bytes),
+                        Err(error) => {
+                            Msg::Failed(format!("Location data is not correct: {}", error))
+                        }
+                    }
+                } else {
+                    Msg::Failed("Location request failed".to_owned())
+                }
+            },
+        ))
+    }
+
+    fn populate_location_storage(&mut self, bytes: Vec<u8>) {
+        self.location_api.populates(bytes)
     }
 }

@@ -1,18 +1,25 @@
-use crate::api::LocationWeather;
+use crate::api::{Condition, LocationWeather};
 use crate::util;
-use yew::{html, Html};
+use yew::{html, Callback, Html, MouseEvent};
 
 pub trait View {
     fn display(&self) -> Html;
 }
 
 pub struct WeatherBoard {
-    pub background: Option<WeatherBackground>,
-    pub today: WeatherToday,
+    background: Option<WeatherBackground>,
+    today: WeatherToday,
+    shade_button_callback: Callback<MouseEvent>,
 }
 
 impl WeatherBoard {
-    pub fn new(title: String, weather: LocationWeather, portrait: bool) -> Self {
+    pub fn new(
+        title: String,
+        weather: LocationWeather,
+        portrait: bool,
+        sync_button_callback: Callback<MouseEvent>,
+        shade_button_callback: Callback<MouseEvent>,
+    ) -> Self {
         let title = title;
         let background = WeatherBackground::new(
             weather.id(),
@@ -33,18 +40,51 @@ impl WeatherBoard {
             weather,
             sun_rise_time,
             sun_set_time,
+            sync_button_callback,
         };
-        WeatherBoard { background, today }
+        WeatherBoard {
+            background,
+            today,
+            shade_button_callback,
+        }
     }
 }
 
-pub struct WeatherBackground {
+impl View for WeatherBoard {
+    fn display(&self) -> Html {
+        html! {
+        <>
+            {
+                self.background.as_ref()
+                    .map(|background| background.display())
+                    .unwrap_or(html!{})
+            }
+            <div id="weatherPanel">
+            <div id="panelControl">
+                <button class="fn" id="shade" onclick=&self.shade_button_callback>{ "⬇️" }</button>
+            </div>
+            {
+                self.today.display()
+            }
+            </div>
+        </>
+        }
+    }
+}
+
+struct WeatherBackground {
     source_video: String,
 }
 
 impl WeatherBackground {
-    pub fn new(weather_id: u16, is_night: bool, feels_like: f32, portrait: bool) -> Option<Self> {
-        let source_video = util::resources::animation(weather_id, is_night, feels_like, portrait)?;
+    pub fn new(
+        weather_condition: Condition,
+        is_night: bool,
+        feels_like: f32,
+        portrait: bool,
+    ) -> Option<Self> {
+        let source_video =
+            util::resources::animation(weather_condition, is_night, feels_like, portrait)?;
         Some(WeatherBackground { source_video })
     }
 }
@@ -67,8 +107,8 @@ struct WeatherIcon {
 }
 
 impl WeatherIcon {
-    pub fn new(weather_id: u16, is_night: bool, feels_like: f32) -> Option<Self> {
-        let image_source = util::resources::icon(weather_id, is_night, feels_like)?;
+    pub fn new(weather_condition: Condition, is_night: bool, feels_like: f32) -> Option<Self> {
+        let image_source = util::resources::icon(weather_condition, is_night, feels_like)?;
         Some(WeatherIcon { image_source })
     }
 }
@@ -81,12 +121,13 @@ impl View for WeatherIcon {
     }
 }
 
-pub struct WeatherToday {
+struct WeatherToday {
     title: String,
     icon: Option<WeatherIcon>,
     weather: LocationWeather,
     sun_rise_time: String,
     sun_set_time: String,
+    sync_button_callback: Callback<MouseEvent>,
 }
 
 impl View for WeatherToday {
@@ -95,14 +136,17 @@ impl View for WeatherToday {
         let wind = &self.weather.wind;
         html! {
             <div id="today">
-                <h1>{ &self.title }</h1>
                 <div>
-                    <h2 margin-top="0">{ &self.weather.description() }</h2>
+                <h1 style="display: inline-block">{ &self.title }</h1>
+                <button class="fn" id="sync" onclick=&self.sync_button_callback>{ "🔄" }</button>
+                </div>
+                <div>
                     {
                         self.icon.as_ref()
                             .map(|icon| icon.display())
                             .unwrap_or(html!{})
                     }
+                    <h2 margin-top="0">{ &self.weather.description() }</h2>
                     <div id="temperatures">
                         <div>
                             <div style="font-size: 40px" class="no_margin_top">{ &format!("{}", temperature.temp.round() as isize) }</div>
@@ -130,7 +174,6 @@ impl View for WeatherToday {
                         <th>{ "Humidity"}</th>
                         <td>{ &format!("{} %", temperature.humidity) }</td>
                     </tr>
-                    <tr></tr>
                     {
                         if let Some(visibility) = self.weather.visibility {
                             html!{
@@ -151,6 +194,60 @@ impl View for WeatherToday {
                         <th>{ "Wind Degree" }</th>
                         <td>{ &format!("{} °", wind.degree) }</td>
                     </tr>
+                    {
+                        self.weather.clouds.as_ref()
+                            .map(|cloud| html! {
+                            <tr>
+                                <th>{ "Cloudiness" }</th>
+                                <td>{ &format!("{}%", cloud.all) }</td>
+                            </tr>
+                            })
+                            .unwrap_or(html!{})
+                    }
+                    {
+                        self.weather.rain.as_ref()
+                            .and_then(|rain| rain.one_hour)
+                            .map(|rain| html! {
+                            <tr>
+                                <th>{ "Rain in 1 hour" }</th>
+                                <td>{ &format!("{:.2} mm", rain) }</td>
+                            </tr>
+                            })
+                            .unwrap_or(html!{})
+                    }
+                    {
+                        self.weather.rain.as_ref()
+                            .and_then(|rain| rain.three_hour)
+                            .map(|rain| html! {
+                            <tr>
+                                <th>{ "Rain in 3 hour" }</th>
+                                <td>{ &format!("{:.2} mm", rain) }</td>
+                            </tr>
+                            })
+                            .unwrap_or(html!{})
+                    }
+                    {
+                        self.weather.snow.as_ref()
+                            .and_then(|snow| snow.one_hour)
+                            .map(|snow| html! {
+                            <tr>
+                                <th>{ "Snow in 1 hour" }</th>
+                                <td>{ &format!("{:.2} mm", snow) }</td>
+                            </tr>
+                            })
+                            .unwrap_or(html!{})
+                    }
+                    {
+                        self.weather.snow.as_ref()
+                            .and_then(|snow| snow.three_hour)
+                            .map(|snow| html! {
+                            <tr>
+                                <th>{ "Snow in 3 hour" }</th>
+                                <td>{ &format!("{:.2} mm", snow) }</td>
+                            </tr>
+                            })
+                            .unwrap_or(html!{})
+                    }
                     <tr>
                         <th>{ "Sunrise"}</th>
                         <td>{ &format!("{}", self.sun_rise_time) }</td>

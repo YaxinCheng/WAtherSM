@@ -1,36 +1,44 @@
 // The numeric code is provided by OpenWeather to indicate the weather condition
 // The full table and explaination can be found here: https://openweathermap.org/weather-conditions
 
-pub fn animation(id: u16, is_night: bool, feels_like: f32, portrait: bool) -> Option<String> {
+use crate::api::Condition::{self, *};
+use crate::api::{Atmosphere, Cloud};
+
+pub fn animation(id: Condition, is_night: bool, feels_like: f32, portrait: bool) -> Option<String> {
+    use Atmosphere::*;
     let mut video_name = String::from("weather_");
     if !portrait {
         video_name.push_str("l_");
     }
     let (weather, append_time_suffix) = match id {
-        200..=232 | 762..=781 => ("thunderstorm", true),
-        300..=321 | 500..=531 => ("rain", true),
-        600..=622 => ("snow", true),
-        701..=721 | 741 => ("fog", true),
-        731 | 751 | 761 => ("windy", true),
-        800 => {
-            if is_night {
-                ("clear", false)
-            } else if feels_like > 35.0 {
-                ("hot", false)
-            } else {
-                ("sunny", false)
+        Thunderstorm(_) => ("thunderstorm", true),
+        Drizzle(_) | Rain(_) => ("rain", true),
+        Snow(_) => ("snow", true),
+        Atmosphere(atmosphere) => match atmosphere {
+            VolcanicAsh | Squalls | Tornado => ("thunderstorm", true),
+            Mist | Smoke | Haze | Fog => ("fog", true),
+            SandWhirls | Sand | Dust => ("windy", true),
+        },
+        Cloud(cloud) => match cloud {
+            Cloud::Clear => {
+                if is_night {
+                    ("clear", false)
+                } else if feels_like > 35.0 {
+                    ("hot", false)
+                } else {
+                    ("sunny", false)
+                }
             }
-        }
-        801 => {
-            if is_night {
-                ("partly_cloud", true)
-            } else {
-                ("partly_sunny", false)
+            Cloud::FewClouds => {
+                if is_night {
+                    ("partly_cloud", true)
+                } else {
+                    ("partly_sunny", false)
+                }
             }
-        }
-        802 => ("partly_cloud", true),
-        803 | 804 => ("cloudy", true),
-        _ => return None,
+            Cloud::ScatteredClouds => ("partly_cloud", true),
+            Cloud::BrokenClouds | Cloud::OvercastClouds => ("cloudy", true),
+        },
     };
     video_name.push_str(weather);
     if append_time_suffix {
@@ -44,46 +52,94 @@ pub fn animation(id: u16, is_night: bool, feels_like: f32, portrait: bool) -> Op
     Some(video_name)
 }
 
-pub fn icon(id: u16, is_night: bool, feels_like: f32) -> Option<String> {
+pub fn icon(id: Condition, is_night: bool, feels_like: f32) -> Option<String> {
     let mut icon_name = String::new();
     let (weather, append_time_suffix) = match id {
-        210..=221 => ("thunderstorm", false),
-        200..=202 => ("thunderstorm_with_rain", true),
-        230..=232 => ("thunderstorm_with_drizzle", true),
-        300..=311 => ("light_drizzle", true),
-        312..=321 => ("drizzle", true),
-        500 | 501 | 520 | 521 => {
-            if is_night {
-                ("light_rain", true)
-            } else {
-                ("rain", true)
+        Thunderstorm(thunder) => {
+            use crate::api::Thunderstorm::*;
+            match thunder {
+                LightThunderstorm | Thunderstorm | HeavyThunderstorm | RaggedThunderstorm => {
+                    ("thunderstorm", false)
+                }
+                ThunderstormWithLightRain | ThunderstormWithRain | ThunderstormWithHeavyRain => {
+                    ("thunderstorm_with_rain", true)
+                }
+                ThunderstormWithLightDrizzle
+                | ThunderstormWithDrizzle
+                | ThunderstormWithHeavyDrizzle => ("thunderstorm_with_drizzle", true),
             }
         }
-        502..=504 | 522 | 531 => ("rain", true),
-        511 => ("light_shower_snow", false),
-        615..=622 => ("rain_snow", false),
-        600 => ("light_snow", true),
-        601 => ("snow", true),
-        602 => ("heavy_snow", true),
-        612 => ("light_snow_sleet", false),
-        611 | 613 => ("sleet", false),
-        701 => ("mist", false),
-        702 | 731 | 751 | 761 | 762 | 771 => ("smoke", false),
-        741 => ("fog", false),
-        721 => ("haze", true),
-        781 => ("tornado", false),
-        800 => {
-            if is_night || feels_like < 35.0 {
-                ("clear", true)
-            } else {
-                ("hot", false)
+        Drizzle(drizzle) => {
+            use crate::api::Drizzle::*;
+            match drizzle {
+                LightIntensityDrizzle
+                | Drizzle
+                | HeavyIntensityDrizzle
+                | LightIntensityDrizzleRain
+                | DrizzleRain => ("light_drizzle", true),
+                HeavyIntensityDrizzleRain
+                | ShowerRainAndDrizzle
+                | HeavyShowerRainAndDrizzle
+                | ShowerDrizzle => ("drizzle", true),
             }
         }
-        801 => ("partly_clear", true),
-        802 => ("partly_cloudy", true),
-        803 => ("mostly_cloudy", true),
-        804 => ("cloudy", true),
-        _ => return None,
+        Rain(rain) => {
+            use crate::api::Rain::*;
+            match rain {
+                LightRain | ModerateRain | LightIntensityShowerRain | ShowerRain => {
+                    if is_night {
+                        ("light_rain", true)
+                    } else {
+                        ("rain", true)
+                    }
+                }
+                HeavyIntensityRain
+                | VeryHeavyRain
+                | ExtremeRain
+                | HeavyIntensityShowerRain
+                | RaggedShowerRain => ("rain", true),
+                FreezingRain => ("light_shower_snow", false),
+            }
+        }
+        Snow(snow) => {
+            use crate::api::Snow::*;
+            match snow {
+                LightRainAndSnow | RainAndSnow | LightShowerSnow | ShowerSnow | HeavyShowerSnow => {
+                    ("rain_snow", false)
+                }
+                LightSnow => ("light_snow", true),
+                Snow => ("snow", true),
+                HeavySnow => ("heavy_snow", true),
+                LightShowerSleet => ("light_snow_sleet", false),
+                Sleet | ShowerSleet => ("sleet", false),
+            }
+        }
+        Atmosphere(atmosphere) => {
+            use Atmosphere::*;
+            match atmosphere {
+                Mist => ("mist", false),
+                Smoke | SandWhirls | Sand | Dust | VolcanicAsh | Squalls => ("smoke", false),
+                Fog => ("fog", false),
+                Haze => ("haze", true),
+                Tornado => ("tornado", false),
+            }
+        }
+        Cloud(cloud) => {
+            use Cloud::*;
+            match cloud {
+                Clear => {
+                    if is_night || feels_like < 35.0 {
+                        ("clear", true)
+                    } else {
+                        ("hot", false)
+                    }
+                }
+                FewClouds => ("partly_clear", true),
+                ScatteredClouds => ("partly_cloudy", true),
+                BrokenClouds => ("mostly_cloudy", true),
+                OvercastClouds => ("cloudy", true),
+            }
+        }
     };
     icon_name.push_str(weather);
     if append_time_suffix {

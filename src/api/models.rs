@@ -1,7 +1,8 @@
+use crate::api::condition::Condition;
 use chrono::NaiveDateTime;
 use serde::Deserialize;
 
-#[derive(Clone, PartialEq, Deserialize, Debug)]
+#[derive(Deserialize)]
 pub struct LocationWeather {
     #[serde(rename = "weather")]
     pub descriptions: Vec<Desc>,
@@ -9,7 +10,9 @@ pub struct LocationWeather {
     pub temperature: Temperatures,
     pub visibility: Option<usize>,
     pub wind: Wind,
-    //pub clouds: Clouds,
+    pub clouds: Option<Clouds>,
+    pub rain: Option<RainSnowVolume>,
+    pub snow: Option<RainSnowVolume>,
     #[serde(rename = "dt")]
     pub current_time: i64,
     #[serde(rename = "sys")]
@@ -18,7 +21,7 @@ pub struct LocationWeather {
     timezone_offset: i64,
 }
 
-#[derive(Clone, PartialEq, Deserialize, Debug)]
+#[derive(Deserialize)]
 pub struct Temperatures {
     pub temp: f32,
     pub feels_like: f32,
@@ -28,36 +31,45 @@ pub struct Temperatures {
     pub humidity: isize,
 }
 
-#[derive(Clone, PartialEq, Deserialize, Debug)]
+#[derive(Deserialize)]
 pub struct Wind {
     pub speed: f32,
     #[serde(rename = "deg")]
     pub degree: f32,
 }
 
-#[derive(Clone, PartialEq, Deserialize, Debug)]
+#[derive(Deserialize)]
 pub struct Clouds {
     pub all: u8,
 }
 
-#[derive(Clone, PartialEq, Deserialize, Debug)]
+#[derive(Deserialize)]
+pub struct RainSnowVolume {
+    #[serde(rename = "1h")]
+    pub one_hour: Option<f32>,
+    #[serde(rename = "3h")]
+    pub three_hour: Option<f32>,
+}
+
+#[derive(Deserialize)]
 pub struct Times {
     sunrise: i64,
     sunset: i64,
 }
 
-#[derive(Clone, PartialEq, Deserialize, Debug)]
+#[derive(Deserialize)]
 pub struct Desc {
     id: u16,
     description: String,
 }
 
 impl LocationWeather {
-    pub fn id(&self) -> u16 {
+    pub fn id(&self) -> Condition {
         self.descriptions
             .first()
             .map(|desc| desc.id)
-            .unwrap_or_default()
+            .and_then(Condition::from)
+            .expect("Unexpected condition")
     }
 
     pub fn description(&self) -> String {
