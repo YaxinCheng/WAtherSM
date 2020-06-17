@@ -33,28 +33,31 @@ body {
 #weatherPanel > * {
     margin-bottom: 20px;
 }
-div#buttonLine > button {
-    border-radius: 20px;
-    float: left;
-    width: 75px;
-    height: 75px;
+#panelControl {
+    width: 100%;
     backdrop-filter: blur(5px);
     -webkit-backdrop-filter: blur(5px);
+    max-width: 340px;
+    border-radius: 20px;
+}
+button.fn {
+    background: transparent;
     border: none;
-    margin-right: 20px;
-    font-size: 25px;
+    margin-left: 20px;
+    font-size: 35px;
+    display: inline-block;
 }
 .no_margin_top {
     margin-top: 0px;
 }
 @media (prefers-color-scheme: dark) {
-    #today, #suggestions, #searchBar, div#buttonLine > button {
+    #today, #suggestions, #searchBar, div#buttonLine > button, #panelControl {
         background: rgba(0, 0, 0, 0.5);
         color: #f1f1f1;
     }
 }
 @media (prefers-color-scheme: light) {
-    #today, #suggestions, #searchBar, div#buttonLine > button {
+    #today, #suggestions, #searchBar, div#buttonLine > button, #panelControl {
         background: rgba(255, 255, 255, 0.5);
         color: #212121;
     }
