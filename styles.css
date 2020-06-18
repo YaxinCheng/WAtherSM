@@ -43,7 +43,7 @@ body {
 button.fn {
     background: transparent;
     border: none;
-    margin-left: 20px;
+    margin-left: 5px;
     font-size: 35px;
     display: inline-block;
 }
