@@ -8,7 +8,7 @@ WebAssembly weather app
 ## Weather API
 This demo is based on [OpenWeather](https://openweathermap.org)
 
-##Compile
+## Compile
 - request api key from OpenWeather
 - put the api key as a file named `.apikey` at the same level of the `Cargo.toml`
 - clone this repo
